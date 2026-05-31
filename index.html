@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AgentFlow — Multi-AI Orchestration Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ── RESET & TOKENS ─────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080a0f;--bg2:#0d1017;--bg3:#111620;
+  --surface:rgba(255,255,255,0.035);--surfaceHi:rgba(255,255,255,0.06);
+  --border:rgba(255,255,255,0.07);--borderHi:rgba(255,255,255,0.15);
+  --text:#eef0f5;--textMid:#8890a4;--textLow:#4a5068;--textFaint:#252a3a;
+  --orange:#e8845a;--blue:#4f8ef7;--green:#2ecc8e;--purple:#9b6fff;
+  --pink:#f06292;--yellow:#f0c040;
+  --grad:linear-gradient(135deg,#e8845a,#4f8ef7);
+  --r:14px;--rsm:8px;--rlg:20px;
+  --font:'Bricolage Grotesque',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden}
+::selection{background:rgba(232,132,90,0.3)}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:#1e2535;border-radius:4px}
+a{color:inherit;text-decoration:none}
+button{font-family:var(--font);cursor:pointer;border:none;outline:none}
+button:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+input,select,textarea{font-family:var(--font);outline:none}
+
+/* ── NOISE OVERLAY ──────────────────────────────────────────── */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  opacity:.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* ── LANDING PAGE ───────────────────────────────────────────── */
+#landing{position:relative;min-height:100vh;display:flex;flex-direction:column;z-index:1}
+
+/* Animated mesh background */
+.mesh{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);animation:drift 12s ease-in-out infinite}
+.orb1{width:600px;height:600px;top:-15%;left:-10%;background:rgba(232,132,90,0.07);animation-delay:0s}
+.orb2{width:500px;height:500px;top:30%;right:-15%;background:rgba(79,142,247,0.06);animation-delay:-4s}
+.orb3{width:400px;height:400px;bottom:-10%;left:30%;background:rgba(155,111,255,0.05);animation-delay:-8s}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-20px) scale(1.05)}66%{transform:translate(-20px,30px) scale(0.97)}}
+
+/* ── NAV ────────────────────────────────────────────────────── */
+nav{position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:14px clamp(16px,5vw,60px);
+  background:rgba(8,10,15,0.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:34px;height:34px;border-radius:9px;background:var(--grad);
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.logo-text{font-size:18px;font-weight:800;letter-spacing:-0.03em;color:var(--text)}
+.logo-sub{font-size:9px;color:var(--textLow);margin-top:1px;font-family:var(--mono)}
+.nav-links{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nav-link{padding:7px 14px;border-radius:var(--rsm);font-size:12px;color:var(--textMid);
+  background:transparent;transition:all .2s;font-weight:500}
+.nav-link:hover{background:var(--surface);color:var(--text)}
+.nav-cta{padding:8px 18px;border-radius:var(--rsm);font-size:12px;font-weight:700;
+  background:var(--grad);color:#fff;transition:all .2s;
+  box-shadow:0 4px 20px rgba(232,132,90,0.25)}
+.nav-cta:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(232,132,90,0.35)}
+
+/* ── HERO ───────────────────────────────────────────────────── */
+.hero{position:relative;z-index:1;text-align:center;
+  padding:clamp(60px,10vh,120px) clamp(20px,5vw,60px) clamp(40px,6vh,80px)}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;
+  padding:5px 14px;border-radius:99px;margin-bottom:28px;
+  background:rgba(232,132,90,0.1);border:1px solid rgba(232,132,90,0.25);
+  font-size:11px;color:var(--orange);font-family:var(--mono);letter-spacing:.06em}
+.hero-badge::before{content:"";width:6px;height:6px;border-radius:50%;
+  background:var(--orange);animation:pulse 1.5s ease-in-out infinite}
+.hero-h1{font-size:clamp(36px,7vw,80px);font-weight:800;letter-spacing:-0.04em;
+  line-height:1.05;margin-bottom:22px;color:var(--text)}
+.hero-h1 .grad-text{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:clamp(15px,2.5vw,19px);color:var(--textMid);max-width:580px;
+  margin:0 auto 40px;line-height:1.65;font-weight:400}
+.hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary{padding:14px 32px;border-radius:var(--r);font-size:14px;font-weight:700;
+  background:var(--grad);color:#fff;transition:all .25s;
+  box-shadow:0 4px 24px rgba(232,132,90,0.3);display:flex;align-items:center;gap:8px}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(232,132,90,0.4)}
+.btn-secondary{padding:14px 28px;border-radius:var(--r);font-size:14px;font-weight:600;
+  background:var(--surface);border:1px solid var(--border);color:var(--textMid);transition:all .25s}
+.btn-secondary:hover{background:var(--surfaceHi);color:var(--text);border-color:var(--borderHi)}
+
+/* Hero stats bar */
+.hero-stats{display:flex;align-items:center;justify-content:center;gap:clamp(20px,4vw,48px);
+  margin-top:56px;padding-top:40px;border-top:1px solid var(--border);flex-wrap:wrap}
+.stat-item{text-align:center}
+.stat-num{font-size:clamp(24px,4vw,36px);font-weight:800;color:var(--text);letter-spacing:-0.03em;line-height:1}
+.stat-lab{font-size:11px;color:var(--textLow);margin-top:4px;font-family:var(--mono)}
+
+/* ── AGENT SHOWCASE ─────────────────────────────────────────── */
+.section{position:relative;z-index:1;padding:clamp(60px,8vw,100px) clamp(20px,5vw,60px)}
+.section-label{font-size:10px;font-family:var(--mono);letter-spacing:.2em;
+  color:var(--textLow);text-transform:uppercase;margin-bottom:12px}
+.section-h2{font-size:clamp(28px,5vw,48px);font-weight:800;letter-spacing:-.03em;
+  color:var(--text);margin-bottom:14px;line-height:1.1}
+.section-sub{font-size:15px;color:var(--textMid);max-width:500px;line-height:1.65}
+
+.agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:44px}
+.agent-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);
+  padding:22px;transition:all .3s;position:relative;overflow:hidden;cursor:default}
+.agent-card::before{content:"";position:absolute;inset:0;background:var(--glow,transparent);
+  opacity:0;transition:opacity .4s;pointer-events:none}
+.agent-card:hover{border-color:var(--agent-color,var(--border));transform:translateY(-3px);
+  box-shadow:0 12px 40px rgba(0,0,0,0.3)}
+.agent-card:hover::before{opacity:1}
+.agent-icon-wrap{width:44px;height:44px;border-radius:12px;margin-bottom:14px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  background:var(--agent-bg);border:1px solid var(--agent-border)}
+.agent-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
+.agent-spec{font-size:11px;color:var(--textLow);font-family:var(--mono);margin-bottom:10px}
+.agent-desc{font-size:12.5px;color:var(--textMid);line-height:1.65}
+.agent-badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:9px;
+  font-family:var(--mono);margin-top:10px;font-weight:600}
+
+/* ── FEATURES ───────────────────────────────────────────────── */
+.features-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:48px}
+.feat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);
+  padding:26px;transition:all .25s}
+.feat-card:hover{background:var(--surfaceHi);border-color:var(--borderHi)}
+.feat-icon{font-size:26px;margin-bottom:14px}
+.feat-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px}
+.feat-desc{font-size:13px;color:var(--textMid);line-height:1.65}
+
+/* ── HOW IT WORKS ───────────────────────────────────────────── */
+.steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0;margin-top:48px;position:relative}
+.steps::before{content:"";position:absolute;top:28px;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent)}
+.step{padding:0 24px;text-align:center;position:relative}
+.step-num{width:56px;height:56px;border-radius:50%;margin:0 auto 16px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;
+  background:var(--bg3);border:1px solid var(--border);color:var(--orange);position:relative;z-index:1}
+.step-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px}
+.step-desc{font-size:12px;color:var(--textMid);line-height:1.6}
+
+/* ── CTA SECTION ────────────────────────────────────────────── */
+.cta-section{text-align:center;padding:clamp(60px,8vw,100px) clamp(20px,5vw,60px);
+  position:relative;z-index:1}
+.cta-box{max-width:680px;margin:0 auto;padding:clamp(40px,5vw,64px);
+  background:linear-gradient(145deg,rgba(232,132,90,0.08),rgba(79,142,247,0.05));
+  border:1px solid var(--borderHi);border-radius:24px;position:relative;overflow:hidden}
+.cta-box::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--orange),var(--blue),transparent)}
+
+/* ── APP SECTION ────────────────────────────────────────────── */
+#app{display:none;position:relative;z-index:1}
+#app.active{display:block}
+
+/* App nav */
+.app-nav{position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px clamp(14px,4vw,36px);
+  background:rgba(8,10,15,0.92);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);flex-wrap:wrap}
+.app-nav-left{display:flex;align-items:center;gap:10px}
+.back-btn{padding:7px 12px;border-radius:var(--rsm);font-size:11px;
+  background:var(--surface);border:1px solid var(--border);color:var(--textMid);
+  transition:all .2s;display:flex;align-items:center;gap:5px}
+.back-btn:hover{background:var(--surfaceHi);color:var(--text)}
+.app-stats{display:flex;gap:16px}
+.astat{text-align:right}
+.astat-v{font-size:19px;font-weight:800;line-height:1}
+.astat-l{font-size:9px;color:var(--textLow);margin-top:2px;font-family:var(--mono)}
+.nav-btns{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.nbtn{padding:7px 11px;border-radius:var(--rsm);font-size:11px;
+  background:var(--surface);border:1px solid var(--border);color:var(--textMid);
+  transition:all .2s;white-space:nowrap}
+.nbtn:hover,.nbtn.active{background:var(--surfaceHi);color:var(--text);border-color:var(--borderHi)}
+.nbtn.web-on{background:rgba(79,142,247,0.15);border-color:rgba(79,142,247,0.35);color:#93c5fd}
+
+/* App main */
+.app-main{max-width:1280px;margin:0 auto;padding:clamp(16px,4vw,32px) clamp(14px,4vw,36px)}
+
+/* Config */
+.config-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);
+  padding:20px 22px;margin-bottom:16px;animation:fadeUp .2s ease}
+.config-toggles{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:16px}
+.toggle-card{padding:12px 14px;border-radius:var(--r);background:var(--surfaceHi);
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;
+  gap:12px;cursor:pointer;transition:all .2s}
+.toggle-card.on{background:var(--ton-bg,rgba(79,142,247,0.08));border-color:var(--ton-c,rgba(79,142,247,0.25))}
+.toggle-track{width:38px;height:20px;border-radius:99px;position:relative;
+  transition:background .25s;flex-shrink:0;background:rgba(255,255,255,0.1)}
+.toggle-track.on{background:var(--tc,#4f8ef7)}
+.toggle-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
+  background:#fff;transition:left .25s;box-shadow:0 1px 4px rgba(0,0,0,0.5)}
+.toggle-thumb.on{left:20px}
+.agent-keys-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.key-card{border-radius:var(--r);padding:12px 14px;border:1px solid var(--border);
+  background:var(--surface);transition:all .25s}
+.key-card.enabled{border-color:var(--kc)}
+.key-input{width:100%;background:rgba(0,0,0,0.3);border:1px solid var(--border);
+  border-radius:var(--rsm);padding:7px 10px;color:var(--text);
+  font-size:11px;font-family:var(--mono);transition:border-color .2s}
+.key-input:focus{border-color:var(--kc,var(--orange))}
+
+/* Task input */
+.task-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);
+  padding:clamp(16px,3vw,26px);margin-bottom:14px;position:relative;overflow:hidden}
+.task-panel::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--orange),var(--blue),var(--green),transparent)}
+.task-types{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.type-pill{padding:5px 12px;border-radius:99px;font-size:11px;font-family:var(--mono);
+  background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--textLow);
+  transition:all .2s;cursor:pointer;font-weight:500}
+.type-pill.active{color:var(--tc);border-color:var(--tc);background:var(--tbg)}
+.type-pill:hover:not(.active){background:var(--surfaceHi);color:var(--text)}
+
+/* Voice bar */
+.voice-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;
+  border-radius:var(--r);border:1px solid var(--border);margin-bottom:12px;
+  background:var(--surface);transition:all .2s;flex-wrap:wrap}
+.voice-bar.listening{background:rgba(239,68,68,0.07);border-color:rgba(239,68,68,0.3)}
+.mic-btn{width:36px;height:36px;border-radius:50%;flex-shrink:0;font-size:15px;
+  border:2px solid rgba(232,132,90,0.4);background:rgba(232,132,90,0.1);
+  transition:all .2s;display:flex;align-items:center;justify-content:center}
+.mic-btn.listening{border-color:#f87171;background:rgba(239,68,68,0.15);
+  animation:micPulse 1s ease-in-out infinite}
+.lang-select{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:var(--rsm);
+  padding:5px 8px;color:var(--text);font-size:11px;cursor:pointer;flex-shrink:0}
+.interim-text{font-size:12px;color:#f87171;font-style:italic;flex:1;min-width:0}
+.voice-hint{font-size:12px;color:var(--textLow);flex:1}
+
+/* Input row */
+.input-row{display:flex;gap:10px;flex-wrap:wrap}
+.task-input{flex:1;min-width:0;background:rgba(0,0,0,0.3);border:1px solid var(--border);
+  border-radius:var(--r);padding:13px 16px;color:var(--text);font-size:14px;
+  transition:border-color .2s}
+.task-input:focus{border-color:rgba(232,132,90,0.5)}
+.task-input::placeholder{color:var(--textLow)}
+.run-btn{padding:13px 22px;border-radius:var(--r);font-size:13px;font-weight:700;
+  background:linear-gradient(135deg,#e8845a,#c4603c);color:#fff;
+  transition:all .25s;white-space:nowrap;display:flex;align-items:center;gap:7px;
+  box-shadow:0 4px 18px rgba(232,132,90,0.3)}
+.run-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 24px rgba(232,132,90,0.4)}
+.run-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+.reset-btn{padding:13px 16px;border-radius:var(--r);font-size:12px;
+  background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--textMid)}
+.reset-btn:hover{background:var(--surfaceHi);color:var(--text)}
+
+/* Progress bar */
+.progress-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;
+  padding:9px 14px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);flex-wrap:wrap;gap:10px}
+.progress-track{flex:1;height:2px;background:rgba(255,255,255,0.05);border-radius:99px;overflow:hidden;min-width:60px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--orange),var(--blue));
+  border-radius:99px;transition:width .4s ease}
+
+/* Web banner */
+.web-banner{margin-bottom:14px;padding:11px 16px;border-radius:var(--r);
+  background:rgba(79,142,247,0.07);border:1px solid rgba(79,142,247,0.25);
+  animation:fadeUp .3s ease}
+.web-banner-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.web-ctx{margin-top:10px;border-top:1px solid rgba(79,142,247,0.2);padding-top:10px;
+  max-height:160px;overflow-y:auto;font-size:11.5px;color:#a0b4c8;
+  font-family:var(--mono);line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.web-sources{margin-top:8px;display:flex;flex-wrap:wrap;gap:5px}
+.web-source{font-size:10px;color:#60a5fa;background:rgba(79,142,247,0.1);
+  padding:2px 8px;border-radius:99px;border:1px solid rgba(79,142,247,0.2);
+  text-decoration:none;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+
+/* Agent grid */
+.agents-output-grid{display:grid;gap:14px;grid-template-columns:repeat(3,1fr);margin-bottom:10px}
+@media(max-width:900px){.agents-output-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.agents-output-grid{grid-template-columns:1fr}}
+
+/* Agent output card */
+.agent-out{border-radius:var(--rlg);padding:clamp(14px,3vw,20px);
+  position:relative;overflow:hidden;transition:border-color .4s,box-shadow .4s;
+  display:flex;flex-direction:column;background:var(--acbg,rgba(255,255,255,0.025));
+  border:1px solid var(--acborder,var(--border));box-shadow:var(--acshadow,0 2px 8px rgba(0,0,0,0.2))}
+.agent-out-glow{position:absolute;inset:0;pointer-events:none;background:var(--acglow,transparent);transition:background .6s}
+.agent-shimmer{position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.02),transparent);
+  animation:shimmer 2s ease-in-out infinite;pointer-events:none}
+.agent-out-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;position:relative}
+.agent-out-icon{width:40px;height:40px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:17px;transition:box-shadow .3s}
+.agent-out-name{font-size:14px;font-weight:700;color:var(--text)}
+.agent-out-spec{font-size:10px;color:var(--textLow);margin-top:1px;font-family:var(--mono)}
+.agent-out-meta{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.badge{font-size:9px;font-family:var(--mono);letter-spacing:.09em;
+  padding:3px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.badge-dot{width:5px;height:5px;border-radius:50%;animation:pulse 1s infinite}
+.agent-divider{height:1px;background:var(--border);margin-bottom:12px}
+.agent-out-body{flex:1;font-size:clamp(11px,1.5vw,13px);line-height:1.8;
+  color:var(--textMid);white-space:pre-wrap;word-break:break-word}
+.agent-idle-desc{font-size:11px;color:var(--textFaint);line-height:1.6}
+.agent-dots{display:flex;gap:4px;justify-content:center;padding:8px 0}
+.dot{width:5px;height:5px;border-radius:50%;opacity:.7}
+.agent-result-box{background:rgba(0,0,0,0.2);border-radius:10px;padding:12px 14px;
+  border-left:2px solid var(--ac);animation:fadeUp .45s ease;flex:1}
+.agent-footer{margin-top:10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.fu-row{margin-top:8px;display:flex;gap:6px}
+.fu-input{flex:1;background:rgba(0,0,0,0.3);border:1px solid var(--border);
+  border-radius:var(--rsm);padding:8px 12px;color:var(--text);font-size:12px}
+.fu-send{padding:8px 14px;border-radius:var(--rsm);font-size:12px;font-weight:700;color:#fff;transition:all .2s}
+.err-box{font-size:12px;color:#f87171;padding:10px 12px;background:rgba(248,113,113,0.08);
+  border-radius:8px;border:1px solid rgba(248,113,113,0.2);line-height:1.6}
+
+/* Code block */
+.code-block{margin:10px 0;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+.code-header{display:flex;align-items:center;justify-content:space-between;
+  padding:6px 12px;background:rgba(0,0,0,0.4)}
+.code-lang{font-size:10px;color:#666;font-family:var(--mono)}
+.code-pre{margin:0;padding:12px 14px;background:rgba(0,0,0,0.35);color:#c0bab3;
+  font-size:12px;line-height:1.65;overflow-x:auto;font-family:var(--mono);
+  white-space:pre-wrap;word-break:break-all}
+.code-output{padding:10px 14px;border-top:1px solid var(--border)}
+.code-output pre{margin:0;font-size:11px;font-family:var(--mono);white-space:pre-wrap}
+
+/* Synthesis */
+.synth-panel{margin-top:16px;padding:20px 22px;border-radius:var(--rlg);
+  border:1px solid var(--borderHi);animation:fadeUp .4s ease;position:relative;overflow:hidden;
+  background:linear-gradient(145deg,rgba(232,132,90,0.06),rgba(79,142,247,0.04),rgba(13,16,23,0))}
+.synth-panel::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--orange),var(--blue),transparent)}
+.synth-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.synth-icon{width:32px;height:32px;border-radius:9px;
+  background:linear-gradient(135deg,rgba(232,132,90,0.25),rgba(79,142,247,0.15));
+  border:1px solid rgba(232,132,90,0.3);display:flex;align-items:center;justify-content:center;font-size:13px}
+.synth-body{margin-top:16px;padding-top:14px;border-top:1px solid var(--border);
+  font-size:13px;line-height:1.85;color:var(--textMid);white-space:pre-wrap;word-break:break-word}
+
+/* Export row */
+.export-row{margin-top:10px;padding:12px 16px;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.exp-btn{padding:5px 10px;border-radius:6px;font-size:10px;font-family:var(--mono);
+  background:var(--surfaceHi);border:1px solid var(--border);color:var(--textMid);cursor:pointer}
+.exp-btn:hover{color:var(--text);border-color:var(--borderHi)}
+
+/* History */
+.history-section{margin-top:32px}
+.section-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.section-rule{flex:1;height:1px;background:var(--border)}
+.hist-list{display:flex;flex-direction:column;gap:5px}
+.hist-item{display:flex;align-items:center;gap:10px;padding:10px 14px;
+  border-radius:10px;background:var(--surface);border:1px solid var(--border);
+  cursor:pointer;transition:all .15s;flex-wrap:wrap}
+.hist-item:hover{background:var(--surfaceHi);border-color:var(--borderHi)}
+.hist-icon{width:26px;height:26px;border-radius:7px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:12px}
+.hist-title{font-size:12.5px;color:var(--text);font-weight:600;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:36ch;flex:1;min-width:80px}
+.hist-type{font-size:10px;color:var(--textLow);font-family:var(--mono);min-width:60px}
+.hist-time{font-size:10px;color:var(--textFaint);flex-shrink:0;font-family:var(--mono)}
+
+/* Footer */
+.site-footer{position:relative;z-index:1;border-top:1px solid var(--border);
+  padding:32px clamp(20px,5vw,60px);display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:16px}
+.footer-brand{display:flex;align-items:center;gap:8px}
+.footer-agents{display:flex;gap:5px;flex-wrap:wrap}
+.fagent{font-size:9px;padding:2px 7px;border-radius:99px;font-family:var(--mono)}
+.footer-copy{font-size:10px;color:var(--textFaint);font-family:var(--mono)}
+
+/* Empty state */
+.empty-state{text-align:center;padding:56px 20px}
+.empty-icon{font-size:44px;margin-bottom:14px}
+.empty-title{font-size:16px;font-weight:700;color:var(--textLow);margin-bottom:8px}
+.empty-desc{font-size:12px;color:var(--textFaint);line-height:1.9}
+
+/* ── COPY BTN ───────────────────────────────────────────────── */
+.copy-btn{display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;
+  font-size:11px;background:var(--surface);border:1px solid var(--border);
+  color:var(--textLow);cursor:pointer;transition:all .2s;white-space:nowrap;font-family:var(--mono)}
+.copy-btn.ok{background:rgba(46,204,142,0.12);border-color:rgba(46,204,142,0.3);color:var(--green)}
+.fu-toggle{padding:4px 10px;border-radius:6px;font-size:11px;background:var(--surface);
+  border:1px solid var(--border);color:var(--textLow);cursor:pointer}
+
+/* ── UTILITY ────────────────────────────────────────────────── */
+.hidden{display:none!important}
+.spin{animation:spin 1.4s linear infinite;display:inline-block}
+.blink{animation:blink .9s step-end infinite}
+.bouncing{animation:bounce 1.2s ease-in-out infinite}
+.pulse-dot{animation:pulse 1s infinite}
+
+/* ── ANIMATIONS ─────────────────────────────────────────────── */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+@keyframes shimmer{from{left:-100%}to{left:100%}}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)}70%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:none}}
+
+/* ── RESPONSIVE ─────────────────────────────────────────────── */
+@media(max-width:768px){
+  .nav-links{display:none}
+  .steps{grid-template-columns:repeat(2,1fr);gap:24px}
+  .steps::before{display:none}
+  .hero-h1{font-size:clamp(30px,8vw,52px)}
+}
+@media(max-width:500px){
+  .steps{grid-template-columns:1fr}
+  .input-row{flex-direction:column}
+  .input-row>*{width:100%}
+  .app-stats .astat-l{display:none}
+  .astat-v{font-size:16px!important}
+  .nav-btns .lab{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- MESH BG -->
+<div class="mesh"><div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div></div>
+
+<!-- ══ LANDING ══════════════════════════════════════════════════ -->
+<div id="landing">
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">
+      <div class="logo-icon">⚡</div>
+      <div><div class="logo-text">AgentFlow</div><div class="logo-sub">multi-ai orchestration</div></div>
+    </div>
+    <div class="nav-links">
+      <a href="#features" class="nav-link">Features</a>
+      <a href="#agents" class="nav-link">Agents</a>
+      <a href="#how" class="nav-link">How it works</a>
+    </div>
+    <button class="nav-cta" onclick="showApp()">Launch App →</button>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge"><span></span>6 AI Models · Live Internet · Voice Input</div>
+    <h1 class="hero-h1">One prompt.<br><span class="grad-text">Six AI brains.</span><br>One answer.</h1>
+    <p class="hero-sub">AgentFlow dispatches your task to Claude, GPT-4o, Gemini, Groq, Mistral & Cohere simultaneously — then synthesizes the best answer from all of them.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="showApp()">⚡ Launch AgentFlow</button>
+      <a href="#how" class="btn-secondary">See how it works</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item"><div class="stat-num">6</div><div class="stat-lab">AI Models</div></div>
+      <div class="stat-item"><div class="stat-num">🌐</div><div class="stat-lab">Live Internet</div></div>
+      <div class="stat-item"><div class="stat-num">3</div><div class="stat-lab">Languages</div></div>
+      <div class="stat-item"><div class="stat-num">EN/HI/MR</div><div class="stat-lab">Voice Input</div></div>
+      <div class="stat-item"><div class="stat-num">∞</div><div class="stat-lab">Follow-ups</div></div>
+    </div>
+  </section>
+
+  <!-- AGENTS SECTION -->
+  <section class="section" id="agents">
+    <div class="section-label">Powered by</div>
+    <h2 class="section-h2">6 world-class AI agents,<br>working in parallel</h2>
+    <p class="section-sub">Each agent has unique strengths. AgentFlow runs them all simultaneously and synthesizes the best response.</p>
+    <div class="agents-grid" id="landing-agents"></div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section" id="features" style="padding-top:0">
+    <div class="section-label">Capabilities</div>
+    <h2 class="section-h2">Everything you need</h2>
+    <div class="features-grid">
+      <div class="feat-card"><div class="feat-icon">🌐</div><div class="feat-title">Live Internet Search</div><div class="feat-desc">Claude fetches real-time web data before answering. All agents receive current information, not just training data.</div></div>
+      <div class="feat-card"><div class="feat-icon">🎤</div><div class="feat-title">Voice Input — EN/HI/MR</div><div class="feat-desc">Speak your task in English, हिन्दी, or मराठी. Browser-native speech recognition, no external service needed.</div></div>
+      <div class="feat-card"><div class="feat-icon">✦</div><div class="feat-title">AI Synthesis Engine</div><div class="feat-desc">Claude meta-analyzes all agent responses — finding agreements, contradictions, and producing one final recommended answer.</div></div>
+      <div class="feat-card"><div class="feat-icon">💬</div><div class="feat-title">Follow-up Questions</div><div class="feat-desc">Ask follow-up questions to any specific agent. Conversation history is maintained across the session.</div></div>
+      <div class="feat-card"><div class="feat-icon">💻</div><div class="feat-title">Code Runner</div><div class="feat-desc">JavaScript code blocks in responses can be executed directly in the browser. See output instantly.</div></div>
+      <div class="feat-card"><div class="feat-icon">📤</div><div class="feat-title">Export Results</div><div class="feat-desc">Download all agent responses and synthesis as Markdown or JSON. Perfect for reports and documentation.</div></div>
+      <div class="feat-card"><div class="feat-icon">⚡</div><div class="feat-title">Parallel Processing</div><div class="feat-desc">All agents run simultaneously. Total time equals the slowest agent — not the sum. Get 6 answers fast.</div></div>
+      <div class="feat-card"><div class="feat-icon">🔒</div><div class="feat-title">Privacy First</div><div class="feat-desc">API keys stored locally in your browser. Never sent to any server. Your conversations stay private.</div></div>
+      <div class="feat-card"><div class="feat-icon">🌓</div><div class="feat-title">Dark / Light Mode</div><div class="feat-desc">Full theme support with persisted preference. Designed for long sessions with comfortable contrast.</div></div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section" id="how" style="padding-top:0">
+    <div class="section-label">Process</div>
+    <h2 class="section-h2">How it works</h2>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-title">Type or Speak</div><div class="step-desc">Enter your task in English, Hindi, or Marathi — text or voice</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-title">Web Search</div><div class="step-desc">Claude searches the internet for current data to give all agents</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-title">Parallel AI</div><div class="step-desc">All enabled agents process simultaneously with live web context</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-title">Synthesis</div><div class="step-desc">Claude analyzes all responses and delivers one final answer</div></div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="cta-box">
+      <div class="section-label" style="margin-bottom:16px">Get started free</div>
+      <h2 class="section-h2" style="font-size:clamp(24px,4vw,36px)">Claude works right now.<br>No key needed.</h2>
+      <p style="font-size:14px;color:var(--textMid);margin:16px 0 28px;line-height:1.65">Claude Sonnet is built in and ready. Add keys for other models in Config to unlock all 6 agents.</p>
+      <button class="btn-primary" onclick="showApp()" style="margin:0 auto;display:inline-flex">⚡ Open AgentFlow</button>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-brand">
+      <div class="logo-icon" style="width:24px;height:24px;font-size:11px;border-radius:6px">⚡</div>
+      <span style="font-size:12px;font-weight:700;color:var(--textLow)">AgentFlow</span>
+    </div>
+    <div class="footer-agents" id="footer-agents"></div>
+    <div class="footer-copy">Keys stored locally · voice EN/HI/MR · export MD+JSON</div>
+  </footer>
+</div>
+
+<!-- ══ APP ══════════════════════════════════════════════════════ -->
+<div id="app">
+  <nav class="app-nav">
+    <div class="app-nav-left">
+      <button class="back-btn" onclick="showLanding()">← Back</button>
+      <div class="logo-icon" style="width:30px;height:30px;font-size:13px;border-radius:8px">⚡</div>
+      <div><div style="font-size:14px;font-weight:800;letter-spacing:-.02em">AgentFlow</div><div style="font-size:9px;color:var(--textLow);font-family:var(--mono)">live · voice · multilingual</div></div>
+    </div>
+    <div class="app-stats" id="app-stats"></div>
+    <div class="nav-btns">
+      <button class="nbtn" id="web-toggle" onclick="toggleWebSearch()">🌐 <span class="lab">Web</span></button>
+      <button class="nbtn" id="theme-toggle" onclick="toggleTheme()">☀️</button>
+      <button class="nbtn" id="config-toggle" onclick="toggleConfig()">⚙ <span class="lab">Config</span></button>
+    </div>
+  </nav>
+
+  <div class="app-main">
+    <div id="config-panel" class="hidden"></div>
+
+    <!-- Task input -->
+    <div class="task-panel">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:17px;font-weight:800;letter-spacing:-.02em;color:var(--text)">New Task</div>
+          <div id="task-sub" style="font-size:11px;color:var(--textLow);margin-top:3px;font-family:var(--mono)"></div>
+        </div>
+        <div id="web-badge" class="hidden" style="padding:4px 10px;border-radius:99px;background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.25);font-size:10px;color:#93c5fd;flex-shrink:0;font-family:var(--mono)">🌐 Live web active</div>
+      </div>
+      <div class="task-types" id="task-types"></div>
+      <div id="voice-bar" class="voice-bar">
+        <button class="mic-btn" id="mic-btn" onclick="toggleVoice()">🎤</button>
+        <div id="voice-status" class="voice-hint">Tap 🎤 — speak in English, हिन्दी or मराठी</div>
+        <select class="lang-select" id="lang-select" onchange="setVoiceLang(this.value)">
+          <option value="en-IN">🇮🇳 English</option>
+          <option value="hi-IN">🇮🇳 हिन्दी</option>
+          <option value="mr-IN">🇮🇳 मराठी</option>
+          <option value="en-US">🇺🇸 English US</option>
+        </select>
+      </div>
+      <div id="no-voice" class="hidden" style="font-size:11px;color:var(--textLow);margin-bottom:10px;font-family:var(--mono)">Voice not supported in this browser (Chrome/Edge recommended)</div>
+      <div class="input-row">
+        <input class="task-input" id="task-input" placeholder="Type or speak your task in English, हिन्दी or मराठी…" onkeydown="if(event.key==='Enter'&&!event.shiftKey)runTask()"/>
+        <button class="run-btn" id="run-btn" onclick="runTask()">▶ <span id="run-label">Run</span></button>
+        <button class="reset-btn hidden" id="reset-btn" onclick="hardReset()">↺</button>
+      </div>
+      <div id="no-agents-warn" class="hidden" style="margin-top:8px;font-size:12px;color:#f87171">⚠ Enable at least one agent in Config</div>
+      <div style="margin-top:6px;font-size:10px;color:var(--textFaint);font-family:var(--mono)">Enter to run</div>
+    </div>
+
+    <div id="web-banner" class="hidden"></div>
+    <div id="progress-row" class="hidden"></div>
+    <div id="agents-grid" class="agents-output-grid hidden"></div>
+    <div id="export-row" class="hidden"></div>
+    <div id="synth-panel"></div>
+    <div id="empty-state" class="empty-state">
+      <div class="empty-icon">⚡</div>
+      <div class="empty-title">Ready to orchestrate</div>
+      <div class="empty-desc" id="empty-desc"></div>
+    </div>
+    <div id="history-section" class="history-section"></div>
+  </div>
+</div>
+
+<script>
+// ══ DATA ════════════════════════════════════════════════════════
+const AGENTS=[
+  {id:"claude",  name:"Claude",       color:"#D97757",accent:"#f0a07a",icon:"◈",specialty:"Reasoning & Analysis",   desc:"Deep reasoning, synthesis, native web search.",          endpoint:"anthropic",freeNote:"Built-in · no key needed", enabled:true, hasWeb:true},
+  {id:"gpt4",    name:"GPT-4o",       color:"#10A37F",accent:"#5eead4",icon:"◎",specialty:"Content & Code",         desc:"Creative writing, code generation, structured output.",   endpoint:"openai",   freeNote:"platform.openai.com",    enabled:false,hasWeb:false},
+  {id:"gemini",  name:"Gemini 1.5",   color:"#4285F4",accent:"#93c5fd",icon:"✦",specialty:"Research & Multimodal", desc:"Grounded research, fact-checking, long context.",         endpoint:"gemini",   freeNote:"aistudio.google.com",    enabled:false,hasWeb:false},
+  {id:"groq",    name:"Groq·Llama3",  color:"#FBBF24",accent:"#fde68a",icon:"⚡",specialty:"Ultra-fast Inference",  desc:"Fastest open-source model via Groq.",                    endpoint:"groq",     freeNote:"console.groq.com FREE",  enabled:false,hasWeb:false},
+  {id:"mistral", name:"Mistral",      color:"#EC4899",accent:"#f9a8d4",icon:"◆",specialty:"Multilingual & Privacy",desc:"European GDPR-native, strong multilingual reasoning.",    endpoint:"mistral",  freeNote:"console.mistral.ai",     enabled:false,hasWeb:false},
+  {id:"cohere",  name:"Command R+",   color:"#8B5CF6",accent:"#c4b5fd",icon:"◉",specialty:"RAG & Enterprise",      desc:"Retrieval-augmented generation, enterprise workflows.",   endpoint:"cohere",   freeNote:"dashboard.cohere.com",   enabled:false,hasWeb:false},
+];
+const TASK_TYPES=["Research","Content","Code","Data Analysis","Debug","Brainstorm"];
+const TYPE_COLORS={"Research":"#4285F4","Content":"#D97757","Code":"#8B5CF6","Data Analysis":"#10A37F","Debug":"#EC4899","Brainstorm":"#FBBF24"};
+const TYPE_ICONS={"Research":"🔍","Content":"✍️","Code":"💻","Data Analysis":"📊","Debug":"🐛","Brainstorm":"💡"};
+const VOICE_LANGS=["en-IN","hi-IN","mr-IN","en-US"];
+const SYS_BASE="You are a world-class AI assistant. Be precise, insightful, and well-structured. Support English, Hindi (हिन्दी), and Marathi (मराठी) — always reply in the language the user used.";
+const SYS_WEB=ctx=>`${SYS_BASE}\n\n[LIVE WEB DATA — use as primary source]\n${ctx}\n\nAlways reference specific data from the web results.`;
+
+// ══ STATE ════════════════════════════════════════════════════════
+let STATE={
+  theme:"dark", webSearch:true, autoSynth:false, showConfig:false,
+  taskType:"Research", voiceLang:"en-IN", listening:false,
+  isRunning:false, webCtx:null, webStatus:null,
+  completedCount:2, completedResults:{}, currentPrompt:"", synthText:"",
+  agentList:JSON.parse(localStorage.getItem("af-agents")||"null")||AGENTS,
+  apiKeys:JSON.parse(localStorage.getItem("af-keys")||"{}"),
+  history:[
+    {id:"h1",title:"Analyze Q2 market trends",   type:"Data Analysis",status:"done",time:"09:14 AM",agents:1},
+    {id:"h2",title:"Write a product launch blog", type:"Content",     status:"done",time:"08:30 AM",agents:2},
+  ],
+  agentHistories:Object.fromEntries(AGENTS.map(a=>[a.id,[]])),
+  aStatus:Object.fromEntries(AGENTS.map(a=>[a.id,"idle"])),
+  aResult:Object.fromEntries(AGENTS.map(a=>[a.id,""])),
+  aError:Object.fromEntries(AGENTS.map(a=>[a.id,""])),
+  aProgress:Object.fromEntries(AGENTS.map(a=>[a.id,0])),
+  aElapsed:Object.fromEntries(AGENTS.map(a=>[a.id,0])),
+  aTokens:Object.fromEntries(AGENTS.map(a=>[a.id,{in:0,out:0}])),
+  synthLoading:false, synthDone:false, synthHasRun:false,
+};
+let voiceRecog=null, timers=[], doneRes={}, starts={}, doneCount=0;
+
+const enabled=()=>STATE.agentList.filter(a=>a.enabled);
+
+// ══ LANDING ══════════════════════════════════════════════════════
+function renderLanding(){
+  // Agent cards
+  const grid=document.getElementById("landing-agents");
+  grid.innerHTML=AGENTS.map(a=>`
+    <div class="agent-card" style="--agent-color:${a.color};--glow:radial-gradient(ellipse at top left,${a.color}12,transparent 70%);--agent-bg:${a.color}20;--agent-border:${a.color}44">
+      <div class="agent-icon-wrap">${a.icon}</div>
+      <div class="agent-name">${a.name}</div>
+      <div class="agent-spec">${a.specialty}</div>
+      <div class="agent-desc">${a.desc}</div>
+      <span class="agent-badge" style="background:${a.color}18;color:${a.color};border:1px solid ${a.color}30">${a.hasWeb?"🌐 web search":"API"}</span>
+    </div>`).join("");
+  // Footer agents
+  document.getElementById("footer-agents").innerHTML=AGENTS.map(a=>`
+    <span class="fagent" style="background:${a.color}14;color:${a.color};border:1px solid ${a.color}22">${a.icon} ${a.name}</span>`).join("");
+}
+
+// ══ NAVIGATION ════════════════════════════════════════════════════
+function showApp(){
+  document.getElementById("landing").style.display="none";
+  document.getElementById("app").classList.add("active");
+  renderApp();
+}
+function showLanding(){
+  document.getElementById("app").classList.remove("active");
+  document.getElementById("landing").style.display="block";
+}
+
+// ══ THEME ═════════════════════════════════════════════════════════
+const LIGHT={
+  "--bg":"#f4f3f1","--bg2":"#ebe9e6","--bg3":"#e2e0dc",
+  "--surface":"rgba(0,0,0,0.03)","--surfaceHi":"rgba(0,0,0,0.06)",
+  "--border":"rgba(0,0,0,0.1)","--borderHi":"rgba(0,0,0,0.18)",
+  "--text":"#1a1917","--textMid":"#5a5550","--textLow":"#888","--textFaint":"#bbb",
+};
+const DARK={
+  "--bg":"#080a0f","--bg2":"#0d1017","--bg3":"#111620",
+  "--surface":"rgba(255,255,255,0.035)","--surfaceHi":"rgba(255,255,255,0.06)",
+  "--border":"rgba(255,255,255,0.07)","--borderHi":"rgba(255,255,255,0.15)",
+  "--text":"#eef0f5","--textMid":"#8890a4","--textLow":"#4a5068","--textFaint":"#252a3a",
+};
+function applyTheme(){
+  const vars=STATE.theme==="light"?LIGHT:DARK;
+  Object.entries(vars).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+  localStorage.setItem("af-theme",STATE.theme);
+  const btn=document.getElementById("theme-toggle");
+  if(btn) btn.textContent=STATE.theme==="dark"?"☀️":"🌙";
+}
+function toggleTheme(){STATE.theme=STATE.theme==="dark"?"light":"dark";applyTheme();}
+
+// ══ FETCH ═════════════════════════════════════════════════════════
+async function apiFetch(url,opts={},timeout=40000){
+  const ctrl=new AbortController();
+  const tid=setTimeout(()=>ctrl.abort(),timeout);
+  try{const r=await fetch(url,{...opts,signal:ctrl.signal});clearTimeout(tid);return r;}
+  catch(e){clearTimeout(tid);throw e.name==="AbortError"?new Error("Request timed out (40s)"):e;}
+}
+
+// ══ WEB SEARCH ════════════════════════════════════════════════════
+async function fetchWebContext(query){
+  const r=await apiFetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2000,
+      tools:[{type:"web_search_20250305",name:"web_search"}],
+      messages:[{role:"user",content:`Search for current, accurate information about: "${query}". Summarize key facts, recent data, and statistics.`}]}),
+  });
+  const d=await r.json();
+  if(!r.ok) throw new Error(d?.error?.message||`Search ${r.status}`);
+  const summary=(d.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n\n")||"No results.";
+  const sources=[];
+  for(const b of (d.content||[])){
+    try{const p=b.type==="tool_result"&&b.content?(typeof b.content==="string"?JSON.parse(b.content):b.content):null;
+      if(Array.isArray(p))p.forEach(s=>s?.url&&sources.push({url:s.url,title:s.title||s.url}));}catch(_){}
+  }
+  return {summary,sources};
+}
+
+// ══ API CALLERS ═══════════════════════════════════════════════════
+async function callAnthropic(prompt,_,webCtx,hist=[]){
+  const sys=webCtx?SYS_WEB(webCtx.summary):SYS_BASE;
+  const msgs=[...hist,{role:"user",content:prompt}];
+  const r=await apiFetch("https://api.anthropic.com/v1/messages",{method:"POST",
+    headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2000,system:sys,messages:msgs})});
+  const d=await r.json();
+  if(!r.ok) throw new Error(d?.error?.message||`Anthropic ${r.status}`);
+  return{text:d.content?.[0]?.text||"No response",in:d.usage?.input_tokens||0,out:d.usage?.output_tokens||0};
+}
+async function callOpenAI(prompt,key,webCtx,hist=[]){
+  if(!key) throw new Error("OpenAI key required — add in Config ⚙");
+  const sys=webCtx?SYS_WEB(webCtx.summary):SYS_BASE;
+  const r=await apiFetch("https://api.openai.com/v1/chat/completions",{method:"POST",
+    headers:{"Content-Type":"application/json",Authorization:`Bearer ${key}`},
+    body:JSON.stringify({model:"gpt-4o",max_tokens:2000,messages:[{role:"system",content:sys},...hist,{role:"user",content:prompt}]})});
+  const d=await r.json();
+  if(!r.ok) throw new Error(d?.error?.message||`OpenAI ${r.status}`);
+  return{text:d.choices?.[0]?.message?.content||"",in:d.usage?.prompt_tokens||0,out:d.usage?.completion_tokens||0};
+}
+async function callGemini(prompt,key,webCtx,hist=[]){
+  if(!key) throw new Error("Gemini key required — add in Config ⚙");
+  const prefix=webCtx?`[LIVE WEB DATA]\n${webCtx.summary}\n\n`:"";
+  const contents=[...hist.map(m=>({role:m.role==="assistant"?"model":"user",parts:[{text:m.content}]})),{role:"user",parts:[{text:prefix+prompt}]}];
+  const r=await apiFetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${key}`,{method:"POST",
+    headers:{"Content-Type":"application/json"},body:JSON.stringify({contents,generationConfig:{maxOutputTokens:2000},systemInstruction:{parts:[{text:SYS_BASE}]}})});
+  const d=await r.json();
+  if(!r.ok) throw new Error(d?.error?.message||`Gemini ${r.status}`);
+  return{text:d.candidates?.[0]?.content?.parts?.[0]?.text||"",in:d.usageMetadata?.promptTokenCount||0,out:d.usageMetadata?.candidatesTokenCount||0};
+}
+async function callGroq(prompt,key,webCtx,hist=[]){
+  if(!key) throw new Error("Groq key required — add in Config ⚙");
+  const sys=webCtx?SYS_WEB(webCtx.summary):SYS_BASE;
+  const r=await apiFetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",
+    headers:{"Content-Type":"application/json",Authorization:`Bearer ${key}`},
+    body:JSON.stringify({model:"llama3-70b-8192",max_tokens:2000,messages:[{role:"system",content:sys},...hist,{role:"user",content:prompt}]})});
+  const d=await r.json();
+  if(!r.ok) throw new Error(d?.error?.message||`Groq ${r.status}`);
+  return{text:d.choices?.[0]?.message?.content||"",in:d.usage?.prompt_tokens||0,out:d.usage?.completion_tokens||0};
+}
+async function callMistral(prompt,key,webCtx,hist=[]){
+  if(!key) throw new Error("Mistral key required — add in Config ⚙");
+  const sys=webCtx?SYS_WEB(webCtx.summary):SYS_BASE;
+  const r=await apiFetch("https://api.mistral.ai/v1/chat/completions",{method:"POST",
+    headers:{"Content-Type":"application/json",Authorization:`Bearer ${key}`},
+    body:JSON.stringify({model:"mistral-large-latest",max_tokens:2000,messages:[{role:"system",content:sys},...hist,{role:"user",content:prompt}]})});
+  const d=await r.json();
+  if(!r.ok) throw new Error(d?.error?.message||`Mistral ${r.status}`);
+  return{text:d.choices?.[0]?.message?.content||"",in:d.usage?.prompt_tokens||0,out:d.usage?.completion_tokens||0};
+}
+async function callCohere(prompt,key,webCtx,hist=[]){
+  if(!key) throw new Error("Cohere key required — add in Config ⚙");
+  const sys=webCtx?SYS_WEB(webCtx.summary):SYS_BASE;
+  const r=await apiFetch("https://api.cohere.com/v2/chat",{method:"POST",
+    headers:{"Content-Type":"application/json",Authorization:`Bearer ${key}`},
+    body:JSON.stringify({model:"command-r-plus",max_tokens:2000,system:sys,messages:[...hist,{role:"user",content:prompt}]})});
+  const d=await r.json();
+  if(!r.ok) throw new Error(d?.message||`Cohere ${r.status}`);
+  return{text:d.message?.content?.[0]?.text||"",in:d.usage?.billed_units?.input_tokens||0,out:d.usage?.billed_units?.output_tokens||0};
+}
+const CALLERS={anthropic:callAnthropic,openai:callOpenAI,gemini:callGemini,groq:callGroq,mistral:callMistral,cohere:callCohere};
+
+// ══ VOICE ═════════════════════════════════════════════════════════
+const voiceSupported=!!(window.SpeechRecognition||window.webkitSpeechRecognition);
+function toggleVoice(){STATE.listening?stopVoice():startVoice();}
+function setVoiceLang(l){STATE.voiceLang=l;if(STATE.listening){stopVoice();startVoice();}}
+function startVoice(){
+  if(!voiceSupported)return;
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  voiceRecog=new SR();
+  voiceRecog.lang=STATE.voiceLang;voiceRecog.continuous=false;voiceRecog.interimResults=true;
+  voiceRecog.onstart=()=>{STATE.listening=true;renderVoiceBar();};
+  voiceRecog.onresult=e=>{
+    let fin="",inter="";
+    for(const r of e.results){if(r.isFinal)fin+=r[0].transcript;else inter+=r[0].transcript;}
+    const vs=document.getElementById("voice-status");
+    if(vs) vs.innerHTML=`<span class="interim-text">${inter||"Listening…"}</span>`;
+    if(fin){const inp=document.getElementById("task-input");if(inp)inp.value=(inp.value?inp.value+" ":"")+fin;renderVoiceBar();}
+  };
+  voiceRecog.onerror=voiceRecog.onend=()=>{STATE.listening=false;renderVoiceBar();};
+  voiceRecog.start();
+}
+function stopVoice(){voiceRecog?.stop();STATE.listening=false;renderVoiceBar();}
+function renderVoiceBar(){
+  const bar=document.getElementById("voice-bar"),btn=document.getElementById("mic-btn"),vs=document.getElementById("voice-status");
+  if(!bar)return;
+  if(STATE.listening){bar.classList.add("listening");if(btn){btn.classList.add("listening");btn.textContent="⏹";}if(vs&&!vs.querySelector(".interim-text"))vs.innerHTML='<span class="interim-text">Listening… speak now</span>';}
+  else{bar.classList.remove("listening");if(btn){btn.classList.remove("listening");btn.textContent="🎤";}if(vs)vs.innerHTML='Tap 🎤 — speak in English, हिन्दी or मराठी';}
+}
+
+// ══ EXPORT ════════════════════════════════════════════════════════
+function exportMD(){
+  let md=`# AgentFlow Results\n\n**Task:** ${STATE.currentPrompt}\n**Date:** ${new Date().toLocaleString()}\n\n`;
+  if(STATE.webCtx)md+=`## 🌐 Web Research\n${STATE.webCtx.summary}\n\n---\n\n`;
+  md+=`## Agent Responses\n\n`;
+  Object.entries(STATE.completedResults).forEach(([id,text])=>{const a=AGENTS.find(x=>x.id===id);md+=`### ${a?.icon} ${a?.name}\n\n${text}\n\n---\n\n`;});
+  if(STATE.synthText)md+=`## ✦ Synthesis\n\n${STATE.synthText}\n`;
+  dlFile(md,`agentflow-${Date.now()}.md`,"text/markdown");
+}
+function exportJSON(){
+  dlFile(JSON.stringify({task:STATE.currentPrompt,timestamp:new Date().toISOString(),webResearch:STATE.webCtx||null,agents:Object.entries(STATE.completedResults).map(([id,text])=>({id,name:AGENTS.find(a=>a.id===id)?.name,response:text,tokens:STATE.aTokens[id]||{}})),synthesis:STATE.synthText||null},null,2),`agentflow-${Date.now()}.json`,"application/json");
+}
+function dlFile(content,name,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+
+// ══ CODE RUNNER ════════════════════════════════════════════════════
+function runCode(code,outputId){
+  try{
+    const logs=[];const fn=new Function("console",code);
+    const res=fn({log:(...a)=>logs.push(a.map(String).join(" ")),error:(...a)=>logs.push("ERR: "+a.join(" ")),warn:(...a)=>logs.push("WARN: "+a.join(" "))});
+    const out=logs.join("\n")||(res!==undefined?String(res):"✓ Done (no output)");
+    document.getElementById(outputId).innerHTML=`<pre style="color:var(--green)">${escHtml(out)}</pre>`;
+    document.getElementById(outputId).style.display="block";
+  }catch(e){document.getElementById(outputId).innerHTML=`<pre style="color:#f87171">${escHtml(e.message)}</pre>`;document.getElementById(outputId).style.display="block";}
+}
+
+// ══ RICH TEXT ══════════════════════════════════════════════════════
+let codeIdx=0;
+function renderRich(text){
+  if(!text)return"";
+  let html="",last=0;const re=/```(\w*)\n?([\s\S]*?)```/g;let m;
+  while((m=re.exec(text))!==null){
+    if(m.index>last)html+=`<span style="white-space:pre-wrap;word-break:break-word">${escHtml(text.slice(last,m.index))}</span>`;
+    const id="co"+(codeIdx++);const lang=m[1]||"code";const code=m[2].trim();
+    const isJS=/^(js|javascript|jsx|ts)$/.test(lang);
+    html+=`<div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">${escHtml(lang)}</span>
+        <div style="display:flex;gap:6px">
+          <button class="copy-btn" onclick="copyText(${JSON.stringify(code)},this)">⎘ Copy</button>
+          ${isJS?`<button onclick="runCode(${JSON.stringify(code)},'${id}')" style="padding:3px 8px;border-radius:6px;font-size:10px;background:rgba(232,132,90,0.15);border:1px solid rgba(232,132,90,0.3);color:var(--orange);cursor:pointer;font-family:var(--mono)">▶ Run</button>`:""}
+        </div>
+      </div>
+      <pre class="code-pre">${escHtml(code)}</pre>
+      <div class="code-output" id="${id}" style="display:none"></div>
+    </div>`;
+    last=m.index+m[0].length;
+  }
+  if(last<text.length)html+=`<span style="white-space:pre-wrap;word-break:break-word">${escHtml(text.slice(last))}</span>`;
+  return html;
+}
+function escHtml(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function copyText(text,btn){navigator.clipboard?.writeText(text);btn.textContent="✓ Copied";btn.classList.add("ok");setTimeout(()=>{btn.textContent="⎘ Copy";btn.classList.remove("ok");},2000);}
+
+// ══ TYPEWRITER ═════════════════════════════════════════════════════
+function typewrite(el,text,speed=9){
+  let i=0;const tid=setInterval(()=>{i++;if(el)el.innerHTML=renderRich(text.slice(0,i));if(i>=text.length)clearInterval(tid);},speed);
+  timers.push(tid);
+}
+
+// ══ RENDER APP ═════════════════════════════════════════════════════
+function renderApp(){
+  applyTheme();
+  renderTaskTypes();
+  renderWebToggle();
+  renderStats();
+  renderAgentsGrid();
+  renderHistory();
+  renderConfig();
+  renderEmptyState();
+  if(!voiceSupported){document.getElementById("voice-bar").classList.add("hidden");document.getElementById("no-voice").classList.remove("hidden");}
+  updateRunBtn();
+}
+
+function renderStats(){
+  const s=document.getElementById("app-stats");if(!s)return;
+  const en=enabled();const activeCt=STATE.isRunning?en.length:0;
+  s.innerHTML=[{l:"Done",v:STATE.completedCount,c:"var(--green)"},{l:"Active",v:activeCt,c:"var(--orange)"},{l:"Agents",v:en.length,c:"var(--blue)"}].map(x=>`<div class="astat"><div class="astat-v" style="color:${x.c}">${x.v}</div><div class="astat-l">${x.l}</div></div>`).join("");
+}
+
+function renderTaskTypes(){
+  const el=document.getElementById("task-types");if(!el)return;
+  el.innerHTML=TASK_TYPES.map(t=>{const c=TYPE_COLORS[t];const ic=TYPE_ICONS[t];return`<button class="type-pill${STATE.taskType===t?" active":""}" style="${STATE.taskType===t?`--tc:${c};--tbg:${c}22;color:${c};border-color:${c}55;background:${c}22`:""}" onclick="setType('${t}')">${ic} ${t}</button>`;}).join("");
+}
+function setType(t){STATE.taskType=t;renderTaskTypes();}
+
+function renderWebToggle(){
+  const btn=document.getElementById("web-toggle");if(!btn)return;
+  if(STATE.webSearch){btn.classList.add("nbtn","web-on");btn.innerHTML='🌐 <span class="lab">Web ON</span>';}
+  else{btn.className="nbtn";btn.innerHTML='🌐 <span class="lab">Web OFF</span>';}
+  const badge=document.getElementById("web-badge");
+  if(badge){STATE.webSearch?badge.classList.remove("hidden"):badge.classList.add("hidden");}
+  const sub=document.getElementById("task-sub");
+  if(sub)sub.textContent=`${enabled().length} agent${enabled().length!==1?"s":""} · ${STATE.webSearch?"🌐 live web · ":""}Enter to run`;
+}
+function toggleWebSearch(){STATE.webSearch=!STATE.webSearch;renderWebToggle();renderEmptyState();}
+
+function toggleConfig(){STATE.showConfig=!STATE.showConfig;renderConfig();const btn=document.getElementById("config-toggle");if(btn){btn.classList.toggle("active",STATE.showConfig);}}
+
+function renderConfig(){
+  const el=document.getElementById("config-panel");if(!el)return;
+  if(!STATE.showConfig){el.classList.add("hidden");return;}
+  el.classList.remove("hidden");
+  el.innerHTML=`
+    <div class="config-toggles">
+      <div class="toggle-card ${STATE.webSearch?"on":""}" style="${STATE.webSearch?"--ton-bg:rgba(79,142,247,0.08);--ton-c:rgba(79,142,247,0.25)":""}" onclick="toggleWebSearch()">
+        <div><div style="font-size:12.5px;font-weight:600;color:var(--text)">🌐 Live Internet Search</div><div style="font-size:10px;color:var(--textFaint);margin-top:2px">Fetches real-time data for all agents</div></div>
+        <div class="toggle-track ${STATE.webSearch?"on":""}" style="${STATE.webSearch?"--tc:#4f8ef7":""}"><div class="toggle-thumb ${STATE.webSearch?"on":""}"></div></div>
+      </div>
+      <div class="toggle-card ${STATE.autoSynth?"on":""}" style="${STATE.autoSynth?"--ton-bg:rgba(232,132,90,0.08);--ton-c:rgba(232,132,90,0.25)":""}" onclick="toggleAutoSynth()">
+        <div><div style="font-size:12.5px;font-weight:600;color:var(--text)">✦ Auto-Synthesize</div><div style="font-size:10px;color:var(--textFaint);margin-top:2px">Claude auto-synthesizes when all done</div></div>
+        <div class="toggle-track ${STATE.autoSynth?"on":""}" style="${STATE.autoSynth?"--tc:#e8845a":""}"><div class="toggle-thumb ${STATE.autoSynth?"on":""}"></div></div>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--textLow);letter-spacing:.1em;margin-bottom:12px">⚙ AGENT API KEYS</div>
+    <div class="agent-keys-grid">
+      ${STATE.agentList.map(a=>`
+        <div class="key-card ${a.enabled?"enabled":""}" style="--kc:${a.color}">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:${a.enabled?10:0}px">
+            <span style="font-size:15px;color:${a.enabled?a.color:"var(--textFaint)"}">${a.icon}</span>
+            <div style="flex:1"><div style="font-size:12.5px;font-weight:600;color:${a.enabled?"var(--text)":"var(--textLow)"}">${a.name}</div><div style="font-size:9px;color:var(--textFaint);margin-top:1px">${a.freeNote}</div></div>
+            <div onclick="toggleAgent('${a.id}')" style="width:34px;height:18px;border-radius:99px;cursor:pointer;background:${a.enabled?a.color:"rgba(255,255,255,0.1)"};position:relative;transition:all .25s;flex-shrink:0;box-shadow:${a.enabled?`0 0 10px ${a.color}40`:"none"}">
+              <div style="position:absolute;top:2px;left:${a.enabled?18:2}px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .25s"></div>
+            </div>
+          </div>
+          ${a.enabled&&a.id!=="claude"?`<input class="key-input" type="password" value="${STATE.apiKeys[a.id]||""}" placeholder="Paste API key…" oninput="saveKey('${a.id}',this.value)" style="--kc:${a.color}"/>`:""}
+          ${a.enabled&&a.id==="claude"?`<div style="font-size:11px;color:var(--green)">✓ Built-in · no key needed</div>`:""}
+        </div>`).join("")}
+    </div>`;
+}
+function toggleAgent(id){STATE.agentList=STATE.agentList.map(a=>a.id===id?{...a,enabled:!a.enabled}:a);localStorage.setItem("af-agents",JSON.stringify(STATE.agentList));renderConfig();renderWebToggle();renderStats();updateRunBtn();}
+function toggleAutoSynth(){STATE.autoSynth=!STATE.autoSynth;renderConfig();}
+function saveKey(id,val){STATE.apiKeys[id]=val;localStorage.setItem("af-keys",JSON.stringify(STATE.apiKeys));}
+
+function updateRunBtn(){
+  const en=enabled();const btn=document.getElementById("run-btn");const lbl=document.getElementById("run-label");const warn=document.getElementById("no-agents-warn");
+  if(btn){btn.disabled=STATE.isRunning||en.length===0;}
+  if(lbl)lbl.textContent=STATE.isRunning?`Running…`:`Run ${en.length} Agent${en.length!==1?"s":""}`;
+  if(warn){en.length===0?warn.classList.remove("hidden"):warn.classList.add("hidden");}
+}
+
+// ══ AGENT GRID RENDER ══════════════════════════════════════════════
+function renderAgentsGrid(){
+  const grid=document.getElementById("agents-grid");if(!grid)return;
+  const en=enabled();
+  if(!en.some(a=>STATE.aStatus[a.id]!=="idle")){grid.classList.add("hidden");return;}
+  grid.classList.remove("hidden");
+  grid.innerHTML=en.map(a=>renderAgentCard(a)).join("");
+}
+
+function renderAgentCard(agent){
+  const st=STATE.aStatus[agent.id],res=STATE.aResult[agent.id],prog=STATE.aProgress[agent.id],err=STATE.aError[agent.id],el=STATE.aElapsed[agent.id],tok=STATE.aTokens[agent.id];
+  const isDone=st==="done",isR=st==="running",isS=st==="searching",active=isR||isS,isErr=st==="error";
+  const totalTok=(tok?.in||0)+(tok?.out||0);
+  const badgeMap={idle:{l:"IDLE",bg:"rgba(255,255,255,0.04)",c:"#555"},searching:{l:"SEARCHING",bg:`${agent.color}22`,c:agent.color},running:{l:"RUNNING",bg:`${agent.color}22`,c:agent.color},done:{l:"DONE",bg:`${agent.color}22`,c:agent.color},error:{l:"ERROR",bg:"rgba(248,113,113,0.15)",c:"#f87171"}};
+  const badge=badgeMap[st]||badgeMap.idle;
+  return`<div class="agent-out" id="card-${agent.id}" style="--ac:${agent.color};--acborder:${isDone?agent.color+"50":isErr?"rgba(248,113,113,0.35)":active?agent.color+"38":"var(--border)"};--acshadow:${isDone?`0 0 28px ${agent.color}18`:"0 2px 8px rgba(0,0,0,0.2)"};--acbg:${isDone?`linear-gradient(145deg,${agent.color}0d,var(--surface))`:"var(--surface)"};--acglow:${isDone?`radial-gradient(ellipse at top left,${agent.color}10,transparent 65%)`:"transparent"}">
+    <div class="agent-out-glow"></div>
+    ${active?'<div class="agent-shimmer"></div>':""}
+    <div class="agent-out-header">
+      <div class="agent-out-icon" style="background:${agent.color}20;border:1px solid ${agent.color}44;color:${agent.color};box-shadow:${active?`0 0 16px ${agent.color}55`:"none"}">
+        ${active?`<span class="spin">⟳</span>`:agent.icon}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="agent-out-name">${agent.name}</div>
+        <div class="agent-out-spec">${agent.specialty}${agent.hasWeb?' <span style="font-size:9px;padding:1px 5px;border-radius:99px;background:rgba(79,142,247,0.15);color:#93c5fd;border:1px solid rgba(79,142,247,0.2)">🌐</span>':""}</div>
+      </div>
+      <div class="agent-out-meta">
+        <span class="badge" style="background:${badge.bg};color:${badge.c};border:1px solid ${badge.c}33">
+          ${active?`<span class="badge-dot pulse-dot" style="background:${agent.color}"></span>`:""}${badge.l}
+        </span>
+        ${isDone&&el>0?`<span style="font-size:9px;color:var(--textFaint);font-family:var(--mono)">${(el/1000).toFixed(1)}s</span>`:""}
+        ${isDone&&totalTok>0?`<span style="font-size:9px;color:var(--textFaint);font-family:var(--mono)">${totalTok.toLocaleString()} tok</span>`:""}
+      </div>
+    </div>
+    <div class="agent-divider"></div>
+    <div class="agent-out-body">
+      ${st==="idle"?`<span class="agent-idle-desc">${agent.desc}</span>`:""}
+      ${isS?`<p style="font-size:11px;color:#93c5fd;margin-bottom:8px;display:flex;align-items:center;gap:5px"><span class="spin">🌐</span> Fetching live internet data…</p>`:""}
+      ${active?`<div style="height:2px;background:rgba(255,255,255,0.06);border-radius:2px;margin-bottom:10px;overflow:hidden"><div style="height:100%;width:${prog}%;background:linear-gradient(90deg,${agent.color},${agent.accent});border-radius:2px;transition:width .25s"></div></div><div class="agent-dots">${[0,1,2].map(i=>`<div class="dot bouncing" style="background:${agent.color};animation-delay:${i*0.2}s"></div>`).join("")}</div>`:""}
+      ${isDone&&res?`<div class="agent-result-box" id="res-${agent.id}">${renderRich(res)}</div>`:""}
+      ${isErr?`<div class="err-box">⚠ ${escHtml(err||"API error — check your key")}</div>`:""}
+    </div>
+    ${isDone&&res?`
+      <div class="agent-footer">
+        <button class="copy-btn" onclick="copyText(${JSON.stringify(res)},this)">⎘ Copy</button>
+        <button class="fu-toggle" onclick="toggleFU('${agent.id}')">💬 Follow-up</button>
+      </div>
+      <div class="fu-row hidden" id="fu-${agent.id}">
+        <input class="fu-input" placeholder="Ask a follow-up…" onkeydown="if(event.key==='Enter')sendFU('${agent.id}',this.value,this)"/>
+        <button class="fu-send" style="background:linear-gradient(135deg,${agent.color},${agent.accent})" onclick="this.previousElementSibling&&sendFU('${agent.id}',this.previousElementSibling.value,this.previousElementSibling)">→</button>
+      </div>`:""}
+  </div>`;
+}
+function toggleFU(id){const el=document.getElementById(`fu-${id}`);if(el){el.classList.toggle("hidden");if(!el.classList.contains("hidden"))el.querySelector("input")?.focus();}}
+function sendFU(agentId,text,inputEl){
+  if(!text?.trim())return;
+  if(inputEl)inputEl.value="";
+  const fuRow=document.getElementById(`fu-${agentId}`);if(fuRow)fuRow.classList.add("hidden");
+  const agent=STATE.agentList.find(a=>a.id===agentId);if(!agent)return;
+  const hist=STATE.agentHistories[agentId]||[];
+  STATE.aStatus[agentId]="running";STATE.aProgress[agentId]=0;STATE.aResult[agentId]="";
+  renderAgentsGrid();
+  let pct=0;const iv=setInterval(()=>{pct=Math.min(pct+4,90);STATE.aProgress[agentId]=Math.round(pct);const card=document.getElementById(`card-${agentId}`);if(card){const bar=card.querySelector(".agent-out-body div div");if(bar)bar.style.width=pct+"%";}},250);
+  timers.push(iv);
+  CALLERS[agent.endpoint](text,STATE.apiKeys[agentId]||"",null,hist)
+    .then(({text:res,in:inp,out})=>{clearInterval(iv);STATE.aStatus[agentId]="done";STATE.aProgress[agentId]=100;STATE.aResult[agentId]=res;STATE.aTokens[agentId]={in:inp,out};STATE.agentHistories[agentId]=[...hist,{role:"user",content:text},{role:"assistant",content:res}];renderAgentsGrid();})
+    .catch(e=>{clearInterval(iv);STATE.aStatus[agentId]="error";STATE.aError[agentId]=e.message;renderAgentsGrid();});
+}
+
+function renderProgress(){
+  const el=document.getElementById("progress-row");if(!el)return;
+  const en=enabled(),done=en.filter(a=>STATE.aStatus[a.id]==="done"||STATE.aStatus[a.id]==="error").length;
+  const totalTok=Object.values(STATE.aTokens).reduce((s,t)=>s+(t?.in||0)+(t?.out||0),0);
+  if(!STATE.isRunning&&!Object.keys(STATE.completedResults).length){el.classList.add("hidden");return;}
+  el.classList.remove("hidden");
+  const allDone=!STATE.isRunning&&done===en.length&&en.length>0;
+  el.innerHTML=`<div class="progress-row">
+    <span style="font-size:11px;color:var(--textLow);font-family:var(--mono)">${STATE.isRunning?`⟳ ${STATE.webStatus==="searching"?"Fetching web data…":`${done}/${en.length} agents done`}`:`✓ All ${done} agent${done!==1?"s":""} complete${totalTok>0?` · ${totalTok.toLocaleString()} tokens`:""}`}</span>
+    <div class="progress-track"><div class="progress-fill" style="width:${en.length>0?(done/en.length)*100:0}%"></div></div>
+    ${allDone?`<button class="exp-btn" onclick="exportMD()">📄 MD</button><button class="exp-btn" onclick="exportJSON()">{} JSON</button>`:""}
+  </div>`;
+}
+
+function renderWebBanner(){
+  const el=document.getElementById("web-banner");if(!el)return;
+  if(!STATE.webCtx&&!STATE.webStatus){el.classList.add("hidden");return;}
+  el.classList.remove("hidden");
+  const statusText=STATE.webStatus==="searching"?"Searching the web…":STATE.webStatus==="done"?`Live web context ready · injected into all agents${STATE.webCtx?.sources?.length?` (${STATE.webCtx.sources.length} sources)`:""}`:STATE.webStatus==="error"?"Web search failed — agents use training data":"";
+  el.innerHTML=`<div class="web-banner-top">
+    <div style="display:flex;align-items:center;gap:8px"><span style="display:inline-block;${STATE.webStatus==="searching"?"animation:spin 1.5s linear infinite":""}">🌐</span><span style="font-size:12px;color:#93c5fd;font-weight:600;font-family:var(--mono)">${statusText}</span></div>
+    ${STATE.webCtx?`<button onclick="toggleWebCtx()" id="ctx-btn" style="font-size:11px;color:#93c5fd;background:none;border:none;cursor:pointer;font-family:var(--mono)">▼ show</button>`:""}
+  </div>
+  <div id="web-ctx-body" class="hidden">
+    <div class="web-ctx">${escHtml(STATE.webCtx?.summary||"")}</div>
+    ${STATE.webCtx?.sources?.length?`<div class="web-sources">${STATE.webCtx.sources.slice(0,5).map(s=>`<a href="${escHtml(s.url)}" target="_blank" rel="noopener" class="web-source">🔗 ${escHtml(s.title||s.url)}</a>`).join("")}</div>`:""}
+  </div>`;
+}
+function toggleWebCtx(){const b=document.getElementById("web-ctx-body"),btn=document.getElementById("ctx-btn");if(b){const h=b.classList.toggle("hidden");if(btn)btn.textContent=h?"▼ show":"▲ hide";}}
+
+function renderSynth(){
+  const el=document.getElementById("synth-panel");if(!el)return;
+  if(!Object.keys(STATE.completedResults).length){el.innerHTML="";return;}
+  const hasDone=STATE.synthDone,hasFull=hasDone&&STATE.synthText;
+  el.innerHTML=`<div class="synth-panel">
+    <div class="synth-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="synth-icon">✦</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text)">Synthesis Engine</div>
+          <div style="font-size:10px;color:var(--textLow);margin-top:1px;font-family:var(--mono)">Claude meta-analyzes all responses${STATE.webCtx?" · web-grounded":""}${STATE.autoSynth?" · auto":""}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        ${!STATE.synthLoading&&!STATE.synthDone?`<button onclick="runSynth()" style="padding:8px 16px;border-radius:12px;font-size:12px;background:linear-gradient(135deg,#e8845a,#4f8ef7);border:none;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(232,132,90,0.3)">✦ Synthesize All</button>`:""}
+        ${STATE.synthLoading?`<span style="font-size:12px;color:var(--orange);display:flex;align-items:center;gap:5px;font-family:var(--mono)"><span class="spin">⟳</span> Synthesizing…</span>`:""}
+        ${hasFull?`<button class="copy-btn" onclick="copyText(${JSON.stringify(STATE.synthText)},this)">⎘ Copy</button>
+          <button onclick="resetSynth()" style="padding:4px 10px;border-radius:6px;font-size:11px;background:var(--surface);border:1px solid var(--border);color:var(--textLow);cursor:pointer;font-family:var(--mono)">↺</button>`:""}
+      </div>
+    </div>
+    ${STATE.synthLoading||STATE.synthDone?`<div class="synth-body" id="synth-body">${renderRich(STATE.synthText)}${!STATE.synthDone?'<span class="blink" style="color:var(--orange)"> ▍</span>':""}</div>`:""}
+  </div>`;
+}
+function resetSynth(){STATE.synthDone=false;STATE.synthLoading=false;STATE.synthHasRun=false;STATE.synthText="";renderSynth();}
+async function runSynth(){
+  if(STATE.synthLoading||STATE.synthHasRun)return;
+  STATE.synthHasRun=true;STATE.synthLoading=true;STATE.synthText="";STATE.synthDone=false;renderSynth();
+  const ctx=Object.entries(STATE.completedResults).map(([id,t])=>`**${AGENTS.find(a=>a.id===id)?.name||id}**:\n${t}`).join("\n\n---\n\n");
+  const p=`You are a synthesis engine.${STATE.webCtx?"\n\nAll agents had live internet data.":""}\nUser's task: "${STATE.currentPrompt}"\n\nResponses:\n\n${ctx}\n\nProvide:\n1. **Key Agreements** — what all models agree on\n2. **Differences** — contradictions or unique views\n3. **Best Insights** — standout points\n4. **Final Answer** — your consolidated recommendation\n\nMatch the language used in the task (English/Hindi/Marathi).`;
+  try{
+    const {text}=await callAnthropic(p,null,null,[]);
+    STATE.synthText=text;STATE.synthDone=true;STATE.synthLoading=false;
+  }catch(e){STATE.synthText=`Error: ${e.message}`;STATE.synthDone=true;STATE.synthLoading=false;}
+  renderSynth();
+}
+
+function renderHistory(){
+  const el=document.getElementById("history-section");if(!el||!STATE.history.length)return;
+  el.innerHTML=`<div class="section-row">
+    <span style="font-size:11px;font-weight:700;color:var(--textLow);letter-spacing:.1em;font-family:var(--mono)">◷ HISTORY</span>
+    <div class="section-rule"></div>
+    <button onclick="clearHistory()" style="font-size:10px;color:var(--textFaint);background:none;border:none;cursor:pointer;font-family:var(--mono)">clear</button>
+  </div>
+  <div class="hist-list">${STATE.history.slice(0,8).map(h=>{const c=TYPE_COLORS[h.type]||"#888";const ic=TYPE_ICONS[h.type]||"📋";return`<div class="hist-item" onclick="useHistory('${escHtml(h.title).replace(/'/g,"\\'")}')">
+    <div class="hist-icon" style="background:${c}22;border:1px solid ${c}44">${ic}</div>
+    <div class="hist-title">${escHtml(h.title)}</div>
+    <div class="hist-type">${h.type}</div>
+    <div class="hist-time">${h.time}</div>
+    <span class="badge" style="background:${c}22;color:${c};border:1px solid ${c}33">${h.status.toUpperCase()}</span>
+  </div>`;}).join("")}</div>`;
+}
+function useHistory(title){const inp=document.getElementById("task-input");if(inp)inp.value=title;}
+function clearHistory(){STATE.history=[];renderHistory();}
+
+function renderEmptyState(){
+  const el=document.getElementById("empty-state");if(!el)return;
+  const en=enabled();const anyActive=en.some(a=>STATE.aStatus[a.id]!=="idle");
+  el.style.display=anyActive?"none":"block";
+  const desc=document.getElementById("empty-desc");
+  if(desc)desc.innerHTML=`Type or 🎤 speak · English, हिन्दी, मराठी<br>${en.length} agent${en.length!==1?"s":""} standing by${STATE.webSearch?" · 🌐 live internet active":""}<br>Enter to dispatch · export MD &amp; JSON`;
+}
+
+// ══ MAIN RUN ══════════════════════════════════════════════════════
+function runTask(){
+  const inp=document.getElementById("task-input");const prompt=inp?.value?.trim();
+  if(!prompt||STATE.isRunning||enabled().length===0)return;
+  timers.forEach(id=>{clearInterval(id);clearTimeout(id);});timers=[];
+  doneRes={};starts={};doneCount=0;
+  const tid=`t-${Date.now()}`;const now=new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+  const snap={prompt,agents:[...enabled()],keys:{...STATE.apiKeys},webSearch:STATE.webSearch,hist:{...STATE.agentHistories}};
+
+  STATE.isRunning=true;STATE.currentPrompt=prompt;STATE.completedResults={};STATE.synthText="";
+  STATE.webCtx=null;STATE.webStatus=null;STATE.synthDone=false;STATE.synthLoading=false;STATE.synthHasRun=false;
+  snap.agents.forEach(a=>{STATE.aStatus[a.id]="idle";STATE.aResult[a.id]="";STATE.aError[a.id]="";STATE.aProgress[a.id]=0;STATE.aElapsed[a.id]=0;STATE.aTokens[a.id]={in:0,out:0};});
+  STATE.history=[{id:tid,title:prompt,type:STATE.taskType,status:"running",time:now,agents:snap.agents.length},...STATE.history.slice(0,9)];
+
+  // Show reset btn
+  document.getElementById("reset-btn")?.classList.remove("hidden");
+  updateRunBtn();renderStats();renderAgentsGrid();renderEmptyState();renderProgress();renderWebBanner();renderSynth();renderHistory();
+
+  const dispatch=ctx=>{
+    snap.agents.forEach(agent=>{
+      starts[agent.id]=Date.now();
+      STATE.aStatus[agent.id]="running";
+      let pct=0;
+      const iv=setInterval(()=>{pct=Math.min(pct+Math.random()*4+1,90);STATE.aProgress[agent.id]=Math.round(pct);
+        const card=document.getElementById(`card-${agent.id}`);
+        if(card){const bar=card.querySelector(".agent-out-body>div:nth-child(1)>div");if(bar)bar.style.width=pct+"%";}
+      },220);
+      timers.push(iv);
+      renderAgentCard_live(agent.id);
+
+      CALLERS[agent.endpoint](snap.prompt,snap.keys[agent.id]||"",ctx,snap.hist[agent.id]||[])
+        .then(({text,in:inp,out})=>{
+          clearInterval(iv);const ms=Date.now()-starts[agent.id];
+          doneRes[agent.id]=text;
+          STATE.aStatus[agent.id]="done";STATE.aProgress[agent.id]=100;
+          STATE.aResult[agent.id]=text;STATE.aElapsed[agent.id]=ms;STATE.aTokens[agent.id]={in:inp,out};
+          STATE.agentHistories[agent.id]=[...(snap.hist[agent.id]||[]),{role:"user",content:snap.prompt},{role:"assistant",content:text}];
+          renderAgentCard_live(agent.id);
+          renderProgress();doneCount++;
+          if(doneCount===snap.agents.length)finish(tid);
+        })
+        .catch(err=>{
+          clearInterval(iv);
+          STATE.aStatus[agent.id]="error";STATE.aProgress[agent.id]=0;STATE.aError[agent.id]=err.message;
+          renderAgentCard_live(agent.id);doneCount++;
+          if(doneCount===snap.agents.length)finish(tid);
+        });
+    });
+  };
+
+  const finish=tid2=>{
+    STATE.history=STATE.history.map(t=>t.id===tid2?{...t,status:"done"}:t);
+    STATE.isRunning=false;STATE.completedCount++;STATE.completedResults={...doneRes};
+    updateRunBtn();renderStats();renderProgress();renderHistory();renderSynth();
+    if(STATE.autoSynth)runSynth();
+  };
+
+  if(snap.webSearch){
+    STATE.webStatus="searching";
+    snap.agents.forEach(a=>{STATE.aStatus[a.id]="searching";});
+    renderAgentsGrid();renderWebBanner();renderProgress();
+    fetchWebContext(snap.prompt)
+      .then(ctx=>{STATE.webCtx=ctx;STATE.webStatus="done";snap.agents.forEach(a=>{STATE.aStatus[a.id]="idle";});renderWebBanner();dispatch(ctx);renderAgentsGrid();})
+      .catch(()=>{STATE.webStatus="error";snap.agents.forEach(a=>{STATE.aStatus[a.id]="idle";});renderWebBanner();dispatch(null);renderAgentsGrid();});
+  } else {
+    dispatch(null);
+    renderAgentsGrid();
+  }
+}
+
+// Live update a single agent card (re-render just that card)
+function renderAgentCard_live(agentId){
+  const agent=STATE.agentList.find(a=>a.id===agentId);if(!agent)return;
+  const existing=document.getElementById(`card-${agentId}`);
+  if(existing){existing.outerHTML=renderAgentCard(agent);}
+  else renderAgentsGrid();
+}
+
+function hardReset(){
+  timers.forEach(id=>{clearInterval(id);clearTimeout(id);});timers=[];doneRes={};starts={};doneCount=0;
+  enabled().forEach(a=>{STATE.aStatus[a.id]="idle";STATE.aResult[a.id]="";STATE.aError[a.id]="";STATE.aProgress[a.id]=0;STATE.aElapsed[a.id]=0;STATE.aTokens[a.id]={in:0,out:0};});
+  STATE.isRunning=false;STATE.completedResults={};STATE.webCtx=null;STATE.webStatus=null;
+  STATE.synthText="";STATE.synthDone=false;STATE.synthLoading=false;STATE.synthHasRun=false;
+  document.getElementById("reset-btn")?.classList.add("hidden");
+  updateRunBtn();renderStats();renderAgentsGrid();renderEmptyState();renderProgress();renderWebBanner();renderSynth();
+}
+
+// ══ INIT ══════════════════════════════════════════════════════════
+(function init(){
+  STATE.theme=localStorage.getItem("af-theme")||"dark";
+  applyTheme();
+  renderLanding();
+  // Handle hash routing
+  if(window.location.hash==="#app")showApp();
+  window.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key==="Enter"){e.preventDefault();runTask();}});
+})();
+</script>
+</body>
+</html>
